@@ -82,7 +82,7 @@ func Fetch() {
 }
 
 func (s *Satellite) Print() {
-	content := fmt.Sprintf(`<Satellite>
+	content := fmt.Sprintf(`	<Satellite>
 		<SatelliteName>%v</SatelliteName>
 		<ApogeeAltitude>%v</ApogeeAltitude>
 		<PerigeeAltitude>%v</PerigeeAltitude>
@@ -91,7 +91,7 @@ func (s *Satellite) Print() {
 		<Meannomaly>%v</Meannomaly>
 		<RAAN>%v</RAAN>
 		<OrbitEpoch>%v</OrbitEpoch>
-</Satellite>
+	</Satellite>
 `, s.SatelliteName, s.ApogeeAltitude, s.PerigeeAltitude, s.Inclination, s.ArgOfPerigee, s.Meannomaly, s.RAAN, s.OrbitEpoch)
 
 	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
