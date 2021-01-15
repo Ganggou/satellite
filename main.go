@@ -22,6 +22,7 @@ type Satellite struct {
 }
 
 const filename = "output"
+const limitNum = 50
 
 func Fetch() {
 	c := colly.NewCollector()
@@ -36,6 +37,9 @@ func Fetch() {
 		var satellite = new(Satellite)
 		nameNode := htmlquery.Find(doc, `//*[@id="ctl00_lblTitle"]`)
 		satellite.SatelliteName = strings.Split(htmlquery.InnerText(nameNode[0]), " ")[0]
+		if !strings.Contains(satellite.SatelliteName, "STARLINK") {
+			return
+		}
 
 		tableNodes := htmlquery.Find(doc, `//table[3]//tr//td[2]`)
 		satellite.OrbitEpoch = htmlquery.InnerText(tableNodes[0])
@@ -48,8 +52,32 @@ func Fetch() {
 		satellite.Print()
 	})
 
+	var limit = make(chan int, limitNum)
+	for i := 0; i < limitNum; i++ {
+		limit <- 1
+	}
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString("<SatelliteStore>\n"); err != nil {
+		panic(err)
+	}
 	for satelliteID := 44238; satelliteID < 47182; satelliteID++ {
-		c.Visit(fmt.Sprintf("https://www.heavens-above.com/orbit.aspx?satid=%v", satelliteID))
+		go func(id int) {
+			<-limit
+			c.Visit(fmt.Sprintf("https://www.heavens-above.com/orbit.aspx?satid=%v", id))
+			limit <- 1
+		}(satelliteID)
+	}
+	for i := 0; i < limitNum; i++ {
+		<-limit
+	}
+	if _, err = f.WriteString("</SatelliteStore>"); err != nil {
+		panic(err)
 	}
 }
 
