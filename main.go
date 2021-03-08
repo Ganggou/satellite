@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -24,7 +25,7 @@ type Satellite struct {
 const filename = "output"
 const limitNum = 50
 
-func Fetch() {
+func Fetch(startID, endID int) {
 	c := colly.NewCollector()
 
 	c.UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
@@ -50,6 +51,7 @@ func Fetch() {
 		satellite.ArgOfPerigee = strings.ReplaceAll(htmlquery.InnerText(tableNodes[6]), "°", "")
 		satellite.Meannomaly = strings.ReplaceAll(htmlquery.InnerText(tableNodes[8]), "°", "")
 		satellite.Print()
+		fmt.Println("fetcted ", satellite.SatelliteName)
 	})
 
 	var limit = make(chan int, limitNum)
@@ -66,7 +68,7 @@ func Fetch() {
 	if _, err = f.WriteString("<SatelliteStore>\n"); err != nil {
 		panic(err)
 	}
-	for satelliteID := 44238; satelliteID < 47182; satelliteID++ {
+	for satelliteID := startID; satelliteID < endID; satelliteID++ {
 		go func(id int) {
 			<-limit
 			c.Visit(fmt.Sprintf("https://www.heavens-above.com/orbit.aspx?satid=%v", id))
@@ -107,5 +109,9 @@ func (s *Satellite) Print() {
 }
 
 func main() {
-	Fetch()
+	start := flag.Int("s", 44238, "Input satellite start id")
+	end := flag.Int("e", 47182, "Input atellite end id")
+	flag.Parse()
+	fmt.Printf("search range < %v, %v>\n", *start, *end)
+	Fetch(*start, *end)
 }
